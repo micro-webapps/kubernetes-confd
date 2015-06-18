@@ -59,9 +59,9 @@ def generate_config(kube_host, kube_port, key_file, cert_file, kube_namespace):
     if not needs_regeneration(cfg):
         return
 
-    os.system("rm -f {0}/*.json".format(output_json_dir))
-    os.system("rm -f {0}/*.cfg".format(output_json_dir))
-    os.system("rm -f {0}/*.conf".format(output_json_dir))
+    os.system("rm -f {0}/*.json".format(config_dir))
+    os.system("rm -f {0}/*.cfg".format(config_dir))
+    os.system("rm -f {0}/*.conf".format(config_dir))
 
     envcmd = ""
 
