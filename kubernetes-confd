@@ -24,7 +24,6 @@ import os
 import httplib
 import time
 import uuid
-import ssl
 
 old_services = []
 
@@ -46,7 +45,11 @@ def generate_config(kube_host, kube_port, key_file, cert_file, kube_namespace):
     webconf_cmd = sys.argv[2]
     restart_cmd = sys.argv[3]
 
-    conn = httplib.HTTPSConnection(kube_host, kube_port, key_file, cert_file, context=ssl._create_unverified_context())
+    if sys.version_info >= (2,7,9):
+        import ssl
+        conn = httplib.HTTPSConnection(kube_host, kube_port, key_file, cert_file, context=ssl._create_unverified_context())
+    else:
+        conn = httplib.HTTPSConnection(kube_host, kube_port, key_file, cert_file)
     if kube_namespace:
         conn.request("GET", "/api/v1beta1/services?namespace=" + kube_namespace)
     else:
