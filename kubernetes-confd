@@ -31,9 +31,10 @@ def needs_regeneration(cfg):
     global old_services
     services = []
     for item in cfg["items"]:
+        item = item["metadata"]
         if not item.has_key("annotations") or not item["annotations"].has_key("webconf-spec"):
             continue
-        services.append(item)
+        services.append(item["annotations"])
 
     if old_services == services:
         return False
@@ -77,19 +78,21 @@ def generate_config(kube_host, kube_port, key_file, cert_file, kube_namespace, t
     envcmd = ""
 
     for item in cfg["items"]:
-        if not item.has_key("annotations") or not item["annotations"].has_key("webconf-spec"):
+        if not item["metadata"].has_key("annotations") or not item["metadata"]["annotations"].has_key("webconf-spec"):
             continue
 
-        webconfig = item["annotations"]["webconf-spec"]
+        webconfig = item["metadata"]["annotations"]["webconf-spec"]
         item["webconfig"] = json.loads(webconfig)
         print(item)
 
         envcmd += "export "
-        envcmd += item["id"].upper().replace("-", "_") + "_PORT="
-        envcmd += "tcp://" + item["portalIP"] + ":" + str(item["port"])
+        envcmd += item["metadata"]["name"].upper().replace("-", "_") + "_PORT="
+        envcmd += "tcp://" + item["spec"]["clusterIP"] + ":" + str(item["spec"]["ports"][0]["port"])
         envcmd += "; "
 
-        f = open(config_dir + "/" + item["uid"] + ".json", "w")
+        item["id"] = item["metadata"]["name"].upper().replace("-", "_")
+
+        f = open(config_dir + "/" + item["metadata"]["uid"] + ".json", "w")
         json.dump(item, f)
         f.close()
         del item["webconfig"]
