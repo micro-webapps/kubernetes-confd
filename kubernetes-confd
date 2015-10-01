@@ -41,6 +41,55 @@ def needs_regeneration(cfg):
     old_services = services
     return True
 
+def generate_pods(kube_host, kube_port, key_file, cert_file, kube_namespace, token):
+    config_dir = sys.argv[1]
+
+    if sys.version_info >= (2,7,9):
+        import ssl
+        conn = httplib.HTTPSConnection(kube_host, kube_port, key_file, cert_file, context=ssl._create_unverified_context())
+    else:
+        conn = httplib.HTTPSConnection(kube_host, kube_port, key_file, cert_file)
+
+    headers = {}
+    if token:
+        headers["Authorization"] = "Bearer " + token
+
+    if kube_namespace:
+        url = "/api/v1/pods?namespace=" + kube_namespace
+    else:
+        url = "/api/v1/pods/"
+
+    conn.request("GET", url, headers = headers)
+    response = conn.getresponse(buffering=True)
+    if response.status != 200:
+        print(response.status, response.read())
+        return
+
+
+    cfg = json.load(response)
+    for item in cfg["items"]:
+        if not item["metadata"].has_key("annotations") or not item["metadata"]["annotations"].has_key("webconf-spec"):
+            continue
+
+        if not item["metadata"].has_key("labels"):
+            continue
+
+        key = str(item["metadata"]["labels"])
+        if not key in pods:
+            pods[key] = []
+
+        webconfig = item["metadata"]["annotations"]["webconf-spec"]
+        item["webconfig"] = json.loads(webconfig)
+        print(item)
+
+        item["id"] = item["metadata"]["name"].upper().replace("-", "_")
+
+        f = open(config_dir + "/" + item["metadata"]["uid"] + ".json", "w")
+        json.dump(item, f)
+        f.close()
+        del item["webconfig"]
+
+
 def generate_config(kube_host, kube_port, key_file, cert_file, kube_namespace, token):
     config_dir = sys.argv[1]
     webconf_cmd = sys.argv[2]
@@ -68,8 +117,11 @@ def generate_config(kube_host, kube_port, key_file, cert_file, kube_namespace, t
         return
 
     cfg = json.load(response)
-    if not needs_regeneration(cfg):
-        return
+    #if not needs_regeneration(cfg):
+        #return
+
+    generate_pods(kube_host, kube_port, key_file, cert_file, kube_namespace, token)
+    
 
     os.system("rm -f {0}/*.json".format(config_dir))
     os.system("rm -f {0}/*.cfg".format(config_dir))
