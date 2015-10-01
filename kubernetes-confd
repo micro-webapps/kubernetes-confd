@@ -40,7 +40,7 @@ def needs_regeneration(cfg):
     old_services = services
     return True
 
-def generate_config(kube_host, kube_port, key_file, cert_file, kube_namespace):
+def generate_config(kube_host, kube_port, key_file, cert_file, kube_namespace, token):
     config_dir = sys.argv[1]
     webconf_cmd = sys.argv[2]
     restart_cmd = sys.argv[3]
@@ -50,10 +50,17 @@ def generate_config(kube_host, kube_port, key_file, cert_file, kube_namespace):
         conn = httplib.HTTPSConnection(kube_host, kube_port, key_file, cert_file, context=ssl._create_unverified_context())
     else:
         conn = httplib.HTTPSConnection(kube_host, kube_port, key_file, cert_file)
+
+    headers = {}
+    if token:
+        headers["Authorization"] = "Bearer " + token
+
     if kube_namespace:
-        conn.request("GET", "/api/v1beta1/services?namespace=" + kube_namespace)
+        url = "/api/v1/services?namespace=" + kube_namespace
     else:
-        conn.request("GET", "/api/v1beta1/services/")
+        url = "/api/v1/services/"
+
+    conn.request("GET", url, headers = headers)
     response = conn.getresponse(buffering=True)
     if response.status != 200:
         print(response.status, response.read())
@@ -122,9 +129,15 @@ def main():
         print("KUBERNETES_SERVICE_HOST or KUBERNETES_SERVICE_PORT not set, exiting")
         return 1
 
+    token = None
+    if os.path.exists("/var/run/secrets/kubernetes.io/serviceaccount/token"):
+        f = open("/var/run/secrets/kubernetes.io/serviceaccount/token")
+        token = f.read()
+        f.close()
+
     while True:
         time.sleep(2)
-        generate_config(kube_host, kube_port, key_file, cert_file, kube_namespace)
+        generate_config(kube_host, kube_port, key_file, cert_file, kube_namespace, token)
         time.sleep(5)
 
     return 0
