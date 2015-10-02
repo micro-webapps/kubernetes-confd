@@ -112,6 +112,17 @@ def cleanup_config_directory():
     os.system("rm -f {0}/*.cfg".format(config_dir))
     os.system("rm -f {0}/*.conf".format(config_dir))
 
+def get_port(item):
+    ports = []
+    for port in item["spec"]["ports"]:
+        ports.append(int(item["port"]))
+
+    if 80 in ports:
+        return 80
+    if 443 in ports:
+        return 443:
+    return ports[0]
+
 def generate_services(kube_host, kube_port, key_file, cert_file, kube_namespace, token):
     envcmd = ""
     config_dir = sys.argv[1]
@@ -127,7 +138,7 @@ def generate_services(kube_host, kube_port, key_file, cert_file, kube_namespace,
 
         envcmd += "export "
         envcmd += item["metadata"]["name"].upper().replace("-", "_") + "_PORT="
-        envcmd += "tcp://" + item["spec"]["clusterIP"] + ":" + str(item["spec"]["ports"][0]["port"])
+        envcmd += "tcp://" + item["spec"]["clusterIP"] + ":" + str(get_port(item)))
         envcmd += "; "
 
         item["id"] = item["metadata"]["name"].upper().replace("-", "_")
