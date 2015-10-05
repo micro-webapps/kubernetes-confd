@@ -120,7 +120,7 @@ def get_port(item):
     if 80 in ports:
         return 80
     if 443 in ports:
-        return 443:
+        return 443
     return ports[0]
 
 def generate_services(kube_host, kube_port, key_file, cert_file, kube_namespace, token):
