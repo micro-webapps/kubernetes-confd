@@ -115,7 +115,7 @@ def cleanup_config_directory():
 def get_port(item):
     ports = []
     for port in item["spec"]["ports"]:
-        ports.append(int(item["port"]))
+        ports.append(int(port["port"]))
 
     if 80 in ports:
         return 80
@@ -138,7 +138,7 @@ def generate_services(kube_host, kube_port, key_file, cert_file, kube_namespace,
 
         envcmd += "export "
         envcmd += item["metadata"]["name"].upper().replace("-", "_") + "_PORT="
-        envcmd += "tcp://" + item["spec"]["clusterIP"] + ":" + str(get_port(item)))
+        envcmd += "tcp://" + item["spec"]["clusterIP"] + ":" + str(get_port(item))
         envcmd += "; "
 
         item["id"] = item["metadata"]["name"].upper().replace("-", "_")
