@@ -95,7 +95,12 @@ def generate_pods(kube_host, kube_port, key_file, cert_file, kube_namespace, tok
 
         webconfig = item["metadata"]["annotations"]["webconf-spec"]
         webconfig = webconfig.replace("PODIP", item["status"]["podIP"])
-        item["webconfig"] = json.loads(webconfig)
+        try:
+            item["webconfig"] = json.loads(webconfig)
+        except ValueError as e:
+            print(webconfig)
+            print("Error parsing JSON: {0}".format(e))
+            continue
         print(item)
 
         item["id"] = item["metadata"]["name"].upper().replace("-", "_")
@@ -133,7 +138,12 @@ def generate_services(kube_host, kube_port, key_file, cert_file, kube_namespace,
             continue
 
         webconfig = item["metadata"]["annotations"]["webconf-spec"]
-        item["webconfig"] = json.loads(webconfig)
+        try:
+            item["webconfig"] = json.loads(webconfig)
+        except ValueError as e:
+            print(webconfig)
+            print("Error parsing JSON: {0}".format(e))
+            continue
         print(item)
 
         envcmd += "export "
